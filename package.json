@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/anglee/airlaby/issues"
   },
-  "homepage": "https://github.com/anglee/airlaby"
+  "homepage": "https://github.com/anglee/airlaby",
+  "dependencies": {
+    "lodash": "^2.4.1",
+    "q": "^1.1.1"
+  }
 }
