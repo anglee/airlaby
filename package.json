@@ -1,0 +1,19 @@
+{
+  "name": "airlaby",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anglee/airlaby.git"
+  },
+  "author": "ang.lee@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/anglee/airlaby/issues"
+  },
+  "homepage": "https://github.com/anglee/airlaby"
+}
