@@ -1,17 +1,15 @@
 var http = require('http');
-var qs = require('querystring');
 var Q = require('q');
 var _ = require('lodash');
 
-
 var httpGet = function(path) {
   var options = {
-    host: 'http://challenge2.airtime.com',
+    host: 'challenge2.xxxxxxx.com',
     port: 7182,
     method: 'GET',
     path: path,
     headers: {
-      "X-Labyrinth-Email": "ang.lee@gmail.com"
+      "X-Labyrinth-Email": "first.last@gmail.com"
     }
   };
 
@@ -27,6 +25,10 @@ var httpGet = function(path) {
         deferred.resolve(JSON.parse(str));
       });
     } else {
+      // I didn't handle error with retry, making the assumption that server responds 404 only if
+      // there is a mistake, according to the instruction. However, this assumption seems not always
+      // true, the server's behavior seems not deterministic. So, I simply rerun the program until
+      // not getting any unexpected 404
       console.error("path = " + path + " ERR(" + response.statusCode + ")");
       deferred.reject("Error");
     }
@@ -36,7 +38,7 @@ var httpGet = function(path) {
 };
 
 
-var start = function() {
+var getStartRoom = function() {
   return httpGet("/start").then(function(ret) {
     return ret.roomId;
   });
@@ -52,6 +54,30 @@ var getNeighbor = function(roomId, exit) {
   return httpGet("/move?roomId=" + roomId + "&exit=" + exit).then(function(ret) {
     return ret.roomId;
   });
+};
+
+var visited = {};
+var markVisited = function(roomId) {
+  visited[roomId] = true;
+};
+var isVisited = function(roomId) {
+  return visited[roomId];
+};
+
+var visitRoom = function(roomId) {
+  if (isVisited(roomId)) {
+    return;
+  } else {
+    markVisited(roomId);
+    return Q.all([
+      getWall(roomId),
+      getExits(roomId).then(function(exits) {
+        return Q.all(_.map(exits, function(exit) {
+          return getNeighbor(roomId, exit).then(visitRoom);
+        }));
+      })
+    ]);
+  }
 };
 
 var brokens = [];
@@ -72,43 +98,18 @@ var getWall = function(roomId) {
 var report = function() {
   var body = JSON.stringify({
     roomIds: brokens,
-    challenge: _.sortBy(lits, function(lit) {
-      return lit.order;
-    })
+    challenge: _(lits).chain()
+        .sortBy(function(lit) {
+          return lit.order;
+        })
+        .map(function(it) {
+          return it.writing;
+        })
+        .value().join('')
   });
   console.log("body " + body);
+  // I didn't POST to /report programmatically,
+  // but instead copied the console output and used POSTMAN(chrome extension) to post it manually
 };
 
-
-var visited = {};
-var markVisited = function(roomId) {
-  visited[roomId] = true;
-};
-var isVisited = function(roomId) {
-  return visited[roomId];
-};
-
-var visitRoom = function(roomId) {
-  if (isVisited(roomId)) {
-    return;
-  } else {
-    markVisited(roomId);
-    return Q.all([
-      getWall(),
-      getExits(roomId).then(function(exits) {
-
-        /*return Q.all(_.map(exits, function(exit) {
-          return getNeighbor(roomId, exit).then(visitRoom);
-        }));*/
-      })
-    ]);
-  }
-};
-
-//start().then(visitRoom).then(report);
-start();
-//start().then(getWall);
-//start().then(getExits);
-//start().then(getExits).then(function(exits) {
-//  console.log(exits);
-//});
+getStartRoom().then(visitRoom).then(report);
